@@ -17,6 +17,8 @@ int main()
 	
 	os.bind(log, sock, 3272);
 
+	os.listen(log, sock);
+	
 	os.close(log, sock);
 
 	os.global_stop(log);

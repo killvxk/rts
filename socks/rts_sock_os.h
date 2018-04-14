@@ -9,6 +9,8 @@ typedef void rts_sock_os_close_handler(rts_eh_t* eh, rts_sock_t sock);
 
 typedef bool rts_sock_os_bind_handler(rts_eh_t* eh, rts_sock_t sock, int port);
 
+typedef bool rts_sock_os_listen_handler(rts_eh_t* eh, rts_sock_t sock);
+
 typedef bool rts_sock_os_start_handler(rts_eh_t* eh);
 
 typedef void rts_sock_os_stop_handler(rts_eh_t* eh);
@@ -24,6 +26,9 @@ typedef struct {
 
 	// Bind an existing socket. Always binds to a port on the current host
 	rts_sock_os_bind_handler* bind;
+
+	// Listen on a given socket. Implementations should auto-select sensible backlog values
+	rts_sock_os_listen_handler* listen;
 
 	// Start OS-level socket support
 	rts_sock_os_start_handler* global_start;

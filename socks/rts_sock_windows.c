@@ -67,21 +67,29 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 	if (ret != 0) {
 		// Returns WSA error code directly, doesn't set last error
 		rts_panic(eh, "Failed to get address info from current host, code: %d", ret);
-
 		return false;
 	}
 
-	if (bind(sock._value, result->ai_addr, result->ai_addrlen) == 0) {
-		
+	if (bind(sock._value, result->ai_addr, result->ai_addrlen) == 0) {		
 		freeaddrinfo(result);
-
 		rts_info(eh, "Bound socket %d to port %d", sock._value, port);
 		return true;
-
 	} else {
 		// Sets a specific WSA error
 		rts_panic_winsock_error(eh, "Failed to bind socket to port");
 		freeaddrinfo(result);
+		return false;
+	}
+}
+
+bool socket_listen(rts_eh_t* eh, rts_sock_t sock) {
+
+	if (listen(sock._value, SOMAXCONN) == 0) {		
+		rts_info(eh, "Listening started on socket %d", sock._value);
+		return true;
+	} else {
+		// Sets a specific WSA error
+		rts_panic_winsock_error(eh, "Failed to start listening on socket");
 		return false;
 	}
 }
@@ -93,6 +101,7 @@ void rts_sock_windows_attach(rts_sock_os_t* sock) {
 	sock->open = &socket_open;
 	sock->close = &socket_close;
 
+	sock->listen = &socket_listen;
 	sock->bind = &socket_bind;
 }
 

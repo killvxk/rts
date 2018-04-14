@@ -53,10 +53,21 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 		rts_info(eh, "Bound socket %d to port %d", sock._value, port);
 		return true;
 	} else {
-
 		// Sets errno on failure
 		rts_panic_unix_errno(eh, "Failed to bind socket to port");
 		freeaddrinfo(result);
+		return false;
+	}
+}
+
+bool socket_listen(rts_eh_t* eh, rts_sock_t sock) {
+
+	if (listen(sock._value, SOMAXCONN) == 0) {
+		rts_info(eh, "Listening started on socket %d", sock._value);
+		return true;
+	} else {
+		// Sets errno on failure
+		rts_panic_unix_errno(eh, "Failed to start listening on socket");
 		return false;
 	}
 }
@@ -65,6 +76,7 @@ void rts_sock_linux_attach(rts_sock_os_t* sock) {
 	sock->open = &socket_open;
 	sock->close = &socket_close;
 	sock->bind = &socket_bind;
+	sock->listen = &socket_listen;
 }
 
 #endif
