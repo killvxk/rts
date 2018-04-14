@@ -19,6 +19,12 @@ int main()
 
 	os.listen(log, sock);
 	
+	rts_sock_t incoming;
+
+	if (os.accept(log, sock, &incoming)) {
+		os.close(log, incoming);
+	}
+
 	os.close(log, sock);
 
 	os.global_stop(log);

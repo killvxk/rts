@@ -44,7 +44,7 @@ rts_sock_t socket_open(rts_eh_t* eh) {
 
 void socket_close(rts_eh_t* eh, rts_sock_t sock) {
 	if (closesocket(sock._value) != 0) {
-		rts_panic_winsock_error(eh, "Failed to close socket");
+		rts_panic_winsock_error(eh, "Failed to close socket");	
 	}
 }
 
@@ -67,6 +67,16 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 	if (ret != 0) {
 		// Returns WSA error code directly, doesn't set last error
 		rts_panic(eh, "Failed to get address info from current host, code: %d", ret);
+		return false;
+	}
+
+	// Always permit reuse of address
+	int enable = 1;
+
+	if (setsockopt(sock._value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
+		// Sets a specific WSA error
+		rts_panic_winsock_error(eh, "Failed to enable address reuse before bind");
+		freeaddrinfo(result);
 		return false;
 	}
 
@@ -94,6 +104,27 @@ bool socket_listen(rts_eh_t* eh, rts_sock_t sock) {
 	}
 }
 
+bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
+
+	// TODO: Take the client addr info (useful)
+	SOCKET client = accept(listener._value, NULL, NULL);
+
+	if (client == INVALID_SOCKET) {
+
+		int err = WSAGetLastError();
+
+		// Non-fatal
+		//
+		rts_warning(eh, "Accept of incoming connection produced invalid socket. WSAGetLastError is %d", err);
+
+		new_client->_value = -1;
+		return false;
+	} else {
+		new_client->_value = client;
+		return true;
+	}
+}
+
 void rts_sock_windows_attach(rts_sock_os_t* sock) {
 	sock->global_start = &winsock_start;
 	sock->global_stop = &winsock_stop;
@@ -103,6 +134,7 @@ void rts_sock_windows_attach(rts_sock_os_t* sock) {
 
 	sock->listen = &socket_listen;
 	sock->bind = &socket_bind;
+	sock->accept = &socket_accept;
 }
 
 

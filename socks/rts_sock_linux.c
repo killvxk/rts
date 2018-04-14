@@ -48,6 +48,16 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 		return false;
 	}
 
+	// Always permit reuse of address
+	int enable = 1;
+
+	if (setsockopt(sock._value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
+		// Sets errno on failure
+		rts_panic_unix_errno(eh, "Failed to enable address reuse before bind");
+		freeaddrinfo(result);
+		return false;
+	}
+
 	if (bind(sock._value, result->ai_addr, result->ai_addrlen) == 0) {
 		freeaddrinfo(result);
 		rts_info(eh, "Bound socket %d to port %d", sock._value, port);
@@ -72,11 +82,31 @@ bool socket_listen(rts_eh_t* eh, rts_sock_t sock) {
 	}
 }
 
+bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
+
+	int client = accept(listener._value, NULL, NULL);
+
+	if (client < 0) {
+
+		int current_errno = errno;
+
+		rts_warning(eh, "Accept of incoming connection produced invalid socket. errno is %d", current_errno);
+
+		new_client->_value = -1;
+		return false;
+	}
+	else {
+		new_client->_value = client;
+		return true;
+	}
+}
+
 void rts_sock_linux_attach(rts_sock_os_t* sock) {
 	sock->open = &socket_open;
 	sock->close = &socket_close;
 	sock->bind = &socket_bind;
 	sock->listen = &socket_listen;
+	sock->accept = &socket_accept;
 }
 
 #endif

@@ -11,6 +11,9 @@ typedef bool rts_sock_os_bind_handler(rts_eh_t* eh, rts_sock_t sock, int port);
 
 typedef bool rts_sock_os_listen_handler(rts_eh_t* eh, rts_sock_t sock);
 
+// TODO: Save off address info given by accept()
+typedef bool rts_sock_os_accept_handler(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client);
+
 typedef bool rts_sock_os_start_handler(rts_eh_t* eh);
 
 typedef void rts_sock_os_stop_handler(rts_eh_t* eh);
@@ -29,6 +32,10 @@ typedef struct {
 
 	// Listen on a given socket. Implementations should auto-select sensible backlog values
 	rts_sock_os_listen_handler* listen;
+
+	// Accept an incoming client on a given socket. 
+	// New client socket is set to a -1 socket handle if this call fails
+	rts_sock_os_accept_handler* accept;
 
 	// Start OS-level socket support
 	rts_sock_os_start_handler* global_start;

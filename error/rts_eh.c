@@ -4,7 +4,8 @@
 typedef enum {
 
 	RTS_EH_INFO,
-	RTS_EH_PANIC
+	RTS_EH_PANIC,
+	RTS_EH_WARNING
 
 } rts_eh_internal_level;
 
@@ -19,6 +20,7 @@ void rts_eh_run(rts_eh_t* handler, rts_eh_internal_level level, const char* form
 	switch (level)
 	{
 		case RTS_EH_INFO: handler->info(format, args); break;
+		case RTS_EH_WARNING: handler->warning(format, args); break;
 
 		default:
 		case RTS_EH_PANIC: {
@@ -44,6 +46,16 @@ void rts_info(rts_eh_t* handler, const char* format, ...) {
 	va_start(args, format);
 
 	rts_eh_run(handler, RTS_EH_INFO, format, args);
+
+	va_end(args);
+}
+
+void rts_warning(rts_eh_t* handler, const char* format, ...) {
+
+	va_list args;
+	va_start(args, format);
+
+	rts_eh_run(handler, RTS_EH_WARNING, format, args);
 
 	va_end(args);
 }

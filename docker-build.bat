@@ -1,1 +1,1 @@
-docker run --rm -it -v %cd%:/build rts-build
+docker run --rm -p 3273:3272 -it -v %cd%:/build rts-build

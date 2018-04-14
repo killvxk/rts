@@ -15,12 +15,16 @@ typedef struct {
 
 	rts_error_handler* info;
 
+	rts_error_handler* warning;
+
 } rts_eh_t;
 
 // Create a generic error and logging handler 
 rts_eh_t rts_eh_create_generic();
 
 void rts_info(rts_eh_t* handler, const char* format, ...);
+
+void rts_warning(rts_eh_t* handler, const char* format, ...);
 
 void rts_panic(rts_eh_t* handler, const char* format, ...);
 
