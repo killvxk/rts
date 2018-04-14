@@ -2,6 +2,9 @@
 
 #ifdef RTS_PLAT_WINDOWS
 
+#include "rts_windows.h"
+#include <winsock2.h>
+
 void rts_panic_last_error(rts_eh_t* handler, const char* format) {
 
 	DWORD last_error = GetLastError();

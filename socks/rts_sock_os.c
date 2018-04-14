@@ -3,6 +3,10 @@
 #include "rts_sock_windows.h"
 #include "rts_sock_linux.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 static bool dummy_start(rts_eh_t* eh) {
 	return true;
 }
@@ -23,7 +27,16 @@ rts_sock_os_t rts_sock_os_create(rts_eh_t* eh) {
 #ifdef RTS_PLAT_LINUX
 	rts_sock_linux_attach(&os);
 #endif
-
 	
 	return os;
+}
+
+char* rts_sock_parse_port(int port) {
+
+	// 65535 = max 5 chars + NULL TERMINATOR
+	char* name = malloc(sizeof(char) * 6);
+	memset(name, 0, 6);
+	snprintf(name, 6, "%d", port);
+
+	return name;
 }
