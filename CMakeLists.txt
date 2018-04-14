@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.6)
 set(CMAKE_VERBOSE_MAKEFILE 1)
 file(GLOB_RECURSE RTS_SOURCES "*.c*")
 

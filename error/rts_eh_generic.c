@@ -1,6 +1,9 @@
 #include "rts_eh.h"
 #include <stdio.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 // Generic stdout logging/error info
 
 static void panic(const char* format, va_list args) {
