@@ -7,6 +7,10 @@ rts_sock_t open_socket_generic(rts_eh_t* eh) {
 	rts_sock_t sock;
 	sock._value = socket(AF_INET, SOCK_STREAM, 0);
 
+	if (sock._value < 0) {
+		rts_panic_unix_errno(eh, "Open generated invalid socket");
+	}
+
 	return sock;
 }
 

@@ -4,6 +4,7 @@
 #ifdef RTS_PLAT_LINUX
 
 #include "rts_sock_os.h"
+#include "rts_eh_os.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

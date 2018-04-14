@@ -6,11 +6,15 @@
 bool winsock_start(rts_eh_t* eh) {
 	WSADATA wsa_data;
 
-	if (WSAStartup(MAKEWORD(2, 2), &wsa_data) == 0) {
+	int ret = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+
+	if (ret == 0) {
 		rts_info(eh, "Winsock started OK");
 		return true;
 	} else {
-		rts_panic_last_error(eh, "Winsock failed to start");
+
+		// As per MSDN, the return value *IS* the error code
+		rts_panic(eh, "Winsock failed to start with error code %d", ret);
 		return false;
 	}
 }
@@ -19,7 +23,7 @@ void winsock_stop(rts_eh_t* eh) {
 	if (WSACleanup() == 0) {
 		rts_info(eh, "Winsock stopped OK");
 	} else {
-		rts_panic_last_error(eh, "Winsock failed to cleanup");
+		rts_panic_winsock_error(eh, "Winsock failed to cleanup");
 	}
 }
 
@@ -27,12 +31,16 @@ rts_sock_t socket_open(rts_eh_t* eh) {
 	rts_sock_t sock;
 	sock._value = socket(AF_INET, SOCK_STREAM, 0);
 
+	if (sock._value == INVALID_SOCKET) {
+		rts_panic_winsock_error(eh, "Open generated invalid socket");
+	}
+
 	return sock;
 }
 
 void socket_close(rts_eh_t* eh, rts_sock_t sock) {
 	if (closesocket(sock._value) != 0) {
-		rts_panic_last_error(eh, "Failed to close socket");
+		rts_panic_winsock_error(eh, "Failed to close socket");
 	}
 }
 
