@@ -7,10 +7,17 @@ int main()
 	rts_eh_t t = rts_eh_create_generic();
 	rts_eh_t* log = &t;
 
-	rts_sock_os_t sock = rts_sock_os_create(log);
+	rts_sock_os_t os = rts_sock_os_create(log);
+	
+	os.global_start(log);
 
-	sock.os_start(log);
-	sock.os_stop(log);
+	rts_sock_t sock = os.open(log);
+
+	rts_info(log, "Socket %d", sock._value);
+
+	os.close(log, sock);
+
+	os.global_stop(log);
 
 	return 0;
 }

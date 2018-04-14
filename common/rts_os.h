@@ -5,7 +5,5 @@
 #endif
 
 #if defined(__linux__)
-
-	// Temp
-	#define RTS_PLAT_UNIX
+	#define RTS_PLAT_LINUX
 #endif
