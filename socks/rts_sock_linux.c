@@ -94,19 +94,40 @@ bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
 
 		new_client->_value = -1;
 		return false;
-	}
-	else {
+	} else {
 		new_client->_value = client;
 		return true;
 	}
 }
 
-void rts_sock_linux_attach(rts_sock_os_t* sock) {
-	sock->open = &socket_open;
-	sock->close = &socket_close;
-	sock->bind = &socket_bind;
-	sock->listen = &socket_listen;
-	sock->accept = &socket_accept;
+bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read) {
+
+	int result = recv(sock._value, buffer, buffer_length, 0); // TODO: PEEK should be separate
+
+	if (result < 0) {
+
+		*bytes_read = -1;
+
+		int current_errno = errno;
+
+		rts_warning(eh, "Receive from socket failed. errno is %d", current_errno);
+
+		return false;
+	}
+	else {
+
+		*bytes_read = result;
+		return true;
+	}
+}
+
+void rts_sock_linux_attach(rts_sock_os_t* os) {
+	os->open = &socket_open;
+	os->close = &socket_close;
+	os->bind = &socket_bind;
+	os->listen = &socket_listen;
+	os->accept = &socket_accept;
+	os->recv = &socket_recv;
 }
 
 #endif

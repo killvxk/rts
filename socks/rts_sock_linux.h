@@ -15,7 +15,7 @@
 #include <errno.h>
 
 // Attach all Linux related hooks to a socket OS handler
-void rts_sock_linux_attach(rts_sock_os_t* sock);
+void rts_sock_linux_attach(rts_sock_os_t* os);
 
 
 #endif

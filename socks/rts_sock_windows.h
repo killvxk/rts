@@ -9,6 +9,6 @@
 #include <ws2tcpip.h>
 
 // Attach all Windows related handlers to a given OS socket layer
-void rts_sock_windows_attach(rts_sock_os_t* sock);
+void rts_sock_windows_attach(rts_sock_os_t* os);
 
 #endif

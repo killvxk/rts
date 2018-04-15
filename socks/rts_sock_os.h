@@ -14,10 +14,11 @@ typedef bool rts_sock_os_listen_handler(rts_eh_t* eh, rts_sock_t sock);
 // TODO: Save off address info given by accept()
 typedef bool rts_sock_os_accept_handler(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client);
 
+typedef bool rts_sock_os_recv_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read);
+
 typedef bool rts_sock_os_start_handler(rts_eh_t* eh);
 
 typedef void rts_sock_os_stop_handler(rts_eh_t* eh);
-
 
 typedef struct {
 
@@ -36,6 +37,10 @@ typedef struct {
 	// Accept an incoming client on a given socket. 
 	// New client socket is set to a -1 socket handle if this call fails
 	rts_sock_os_accept_handler* accept;
+
+	// Perform a receive for a given socket. Always blocking, always full receive - PEEK is implemented elsewhere.
+	// bytes_read contains byte qty. OR 0 for disconnect
+	rts_sock_os_recv_handler* recv;
 
 	// Start OS-level socket support
 	rts_sock_os_start_handler* global_start;

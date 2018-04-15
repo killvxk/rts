@@ -125,16 +125,37 @@ bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
 	}
 }
 
-void rts_sock_windows_attach(rts_sock_os_t* sock) {
-	sock->global_start = &winsock_start;
-	sock->global_stop = &winsock_stop;
+bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read) {
 
-	sock->open = &socket_open;
-	sock->close = &socket_close;
+	int result = recv(sock._value, buffer, buffer_length, 0); // TODO: PEEK should be separate
 
-	sock->listen = &socket_listen;
-	sock->bind = &socket_bind;
-	sock->accept = &socket_accept;
+	if (result == SOCKET_ERROR) {
+		
+		*bytes_read = -1;
+
+		int err = WSAGetLastError();
+
+		rts_warning(eh, "Receive from socket failed. WSAGetLastError is %d", err);
+
+		return false;
+	} else {
+
+		*bytes_read = result;
+		return true;
+	}
+}
+
+void rts_sock_windows_attach(rts_sock_os_t* os) {
+	os->global_start = &winsock_start;
+	os->global_stop = &winsock_stop;
+
+	os->open = &socket_open;
+	os->close = &socket_close;
+
+	os->listen = &socket_listen;
+	os->bind = &socket_bind;
+	os->accept = &socket_accept;
+	os->recv = &socket_recv;
 }
 
 

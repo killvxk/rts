@@ -1,6 +1,8 @@
 #include "error/rts_eh.h"
 #include "socks/rts_sock_os.h"
+#include "socks/rts_sock_buffer.h"
 #include <stdio.h>
+#include <string.h>
 
 int main()
 {	
@@ -22,7 +24,22 @@ int main()
 	rts_sock_t incoming;
 
 	if (os.accept(log, sock, &incoming)) {
+
+		rts_sock_buffer_t buf = rts_sock_buffer_create(24, &os, incoming);
+		
+		bool disconnect = false;
+
+		if (rts_sock_buffer_recv_until_full(&buf, log, true, &disconnect)) {
+
+			if (disconnect) {
+				rts_info(log, "Client disconnected");
+			} else {
+				rts_info(log, "%s", buf._data);
+			}
+		}
+
 		os.close(log, incoming);
+		rts_sock_buffer_destroy(&buf);
 	}
 
 	os.close(log, sock);
