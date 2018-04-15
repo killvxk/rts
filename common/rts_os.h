@@ -7,3 +7,6 @@
 #if defined(__linux__)
 	#define RTS_PLAT_LINUX
 #endif
+
+#define RTS_MAX(a,b) (((a) > (b)) ? (a) : (b))
+#define RTS_MIN(a,b) (((a) < (b)) ? (a) : (b))

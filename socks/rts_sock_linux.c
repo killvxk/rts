@@ -8,7 +8,7 @@
 rts_sock_t socket_open(rts_eh_t* eh) {
 
 	rts_sock_t sock;
-	sock.value = socket(AF_INET6, SOCK_STREAM, 0);
+	sock.value = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (sock.value < 0) {
 		rts_panic_unix_errno(eh, "Open generated invalid socket");
@@ -28,9 +28,7 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 	struct addrinfo hint_struct;
 	memset(&hint_struct, 0, sizeof(struct addrinfo));
 
-	// TODO: Forcing this to IPV6 because docker for ex. prefers v4 when given choice
-	// that isn't directly connected to socket in use
-	hint_struct.ai_family = AF_INET6;
+	hint_struct.ai_family = AF_INET;
 	hint_struct.ai_socktype = SOCK_STREAM;
 	hint_struct.ai_flags = AI_PASSIVE;
 
@@ -105,18 +103,30 @@ bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 	int result = recv(sock.value, buffer, buffer_length, 0); // TODO: PEEK should be separate
 
 	if (result < 0) {
-
 		*bytes_read = -1;
 
 		int current_errno = errno;
-
 		rts_warning(eh, "Receive from socket failed. errno is %d", current_errno);
 
 		return false;
-	}
-	else {
-
+	} else {
 		*bytes_read = result;
+		return true;
+	}
+}
+
+bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent) {
+	int result = send(sock.value, buffer, buffer_length, 0);
+
+	if (result < 0) {
+		*bytes_sent = -1;
+
+		int current_errno = errno;
+		rts_warning(eh, "Send to socket peer failed. errno is %d", current_errno);
+
+		return false;
+	} else {
+		*bytes_sent = result;
 		return true;
 	}
 }
@@ -128,6 +138,7 @@ void rts_sock_linux_attach(rts_sock_os_t* os) {
 	os->listen = &socket_listen;
 	os->accept = &socket_accept;
 	os->recv = &socket_recv;
+	os->send = &socket_send;
 }
 
 #endif

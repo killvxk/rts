@@ -33,7 +33,7 @@ void winsock_stop(rts_eh_t* eh) {
 
 rts_sock_t socket_open(rts_eh_t* eh) {
 	rts_sock_t sock;
-	sock.value = socket(AF_INET6, SOCK_STREAM, 0);
+	sock.value = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (sock.value == INVALID_SOCKET) {
 		rts_panic_winsock_error(eh, "Open generated invalid socket");
@@ -52,16 +52,16 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 	ADDRINFOA hint_struct;
 	memset(&hint_struct, 0, sizeof(ADDRINFOA));
 
-	hint_struct.ai_family = AF_UNSPEC;  
+	hint_struct.ai_family = AF_INET;  
 	hint_struct.ai_socktype = SOCK_STREAM;
 	hint_struct.ai_flags = AI_PASSIVE;
-
+	
 	ADDRINFOA* result;
 
 	char* service_name = rts_sock_parse_port(port);
 
 	int ret = getaddrinfo(NULL, service_name, &hint_struct, &result);
-	
+		
 	free(service_name);
 
 	if (ret != 0) {
@@ -129,18 +129,33 @@ bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 
 	int result = recv(sock.value, buffer, buffer_length, 0); // TODO: PEEK should be separate
 
-	if (result == SOCKET_ERROR) {
-		
+	if (result == SOCKET_ERROR) {		
 		*bytes_read = -1;
 
 		int err = WSAGetLastError();
-
 		rts_warning(eh, "Receive from socket failed. WSAGetLastError is %d", err);
 
 		return false;
 	} else {
 
 		*bytes_read = result;
+		return true;
+	}
+}
+
+bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent) {
+
+	int result = send(sock.value, buffer, buffer_length, 0);
+
+	if (result == SOCKET_ERROR) {
+		*bytes_sent = -1;
+
+		int err = WSAGetLastError();
+		rts_warning(eh, "Send to socket peer failed. WSAGetLastError is %d", err);
+
+		return false;
+	} else {
+		*bytes_sent = result;
 		return true;
 	}
 }
@@ -156,6 +171,7 @@ void rts_sock_windows_attach(rts_sock_os_t* os) {
 	os->bind = &socket_bind;
 	os->accept = &socket_accept;
 	os->recv = &socket_recv;
+	os->send = &socket_send;
 }
 
 

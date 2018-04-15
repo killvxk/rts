@@ -24,19 +24,13 @@ int main()
 	rts_sock_t incoming;
 
 	if (os.accept(log, sock, &incoming)) {
+				
+		const char* hello = "Hello Mr Mac\r\n";
+		rts_sock_buffer_t buf = rts_sock_buffer_create(14, &os, incoming);
 
-		rts_sock_buffer_t buf = rts_sock_buffer_create(24, &os, incoming);
+		rts_sock_buffer_copy_from(hello, 14, &buf, true);
 		
-		bool disconnect = false;
-
-		if (rts_sock_buffer_recv_until_full(&buf, log, true, &disconnect)) {
-
-			if (disconnect) {
-				rts_info(log, "Client disconnected");
-			} else {
-				rts_info(log, "%s", buf.data);
-			}
-		}
+		while (rts_sock_buffer_send_until_finished(&buf, log));
 
 		os.close(log, incoming);
 		rts_sock_buffer_destroy(&buf);

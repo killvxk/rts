@@ -16,6 +16,8 @@ typedef bool rts_sock_os_accept_handler(rts_eh_t* eh, rts_sock_t listener, rts_s
 
 typedef bool rts_sock_os_recv_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read);
 
+typedef bool rts_sock_os_send_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent);
+
 typedef bool rts_sock_os_start_handler(rts_eh_t* eh);
 
 typedef void rts_sock_os_stop_handler(rts_eh_t* eh);
@@ -41,6 +43,9 @@ typedef struct {
 	// Perform a receive for a given socket. Always blocking, always full receive - PEEK is implemented elsewhere.
 	// bytes_read contains byte qty. OR 0 for disconnect
 	rts_sock_os_recv_handler* recv;
+
+	// Perform a send for a given socket. Always blocking with no flags
+	rts_sock_os_send_handler* send;
 
 	// Start OS-level socket support
 	rts_sock_os_start_handler* global_start;
