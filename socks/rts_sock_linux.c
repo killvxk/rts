@@ -8,9 +8,9 @@
 rts_sock_t socket_open(rts_eh_t* eh) {
 
 	rts_sock_t sock;
-	sock._value = socket(AF_INET6, SOCK_STREAM, 0);
+	sock.value = socket(AF_INET6, SOCK_STREAM, 0);
 
-	if (sock._value < 0) {
+	if (sock.value < 0) {
 		rts_panic_unix_errno(eh, "Open generated invalid socket");
 	}
 
@@ -19,7 +19,7 @@ rts_sock_t socket_open(rts_eh_t* eh) {
 
 void socket_close(rts_eh_t* eh, rts_sock_t sock) {
 	
-	if (close(sock._value) != 0) {
+	if (close(sock.value) != 0) {
 		rts_panic_unix_errno(eh, "Failed to close socket!");
 	}
 }
@@ -51,16 +51,16 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 	// Always permit reuse of address
 	int enable = 1;
 
-	if (setsockopt(sock._value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
+	if (setsockopt(sock.value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
 		// Sets errno on failure
 		rts_panic_unix_errno(eh, "Failed to enable address reuse before bind");
 		freeaddrinfo(result);
 		return false;
 	}
 
-	if (bind(sock._value, result->ai_addr, result->ai_addrlen) == 0) {
+	if (bind(sock.value, result->ai_addr, result->ai_addrlen) == 0) {
 		freeaddrinfo(result);
-		rts_info(eh, "Bound socket %d to port %d", sock._value, port);
+		rts_info(eh, "Bound socket %d to port %d", sock.value, port);
 		return true;
 	} else {
 		// Sets errno on failure
@@ -72,8 +72,8 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 
 bool socket_listen(rts_eh_t* eh, rts_sock_t sock) {
 
-	if (listen(sock._value, SOMAXCONN) == 0) {
-		rts_info(eh, "Listening started on socket %d", sock._value);
+	if (listen(sock.value, SOMAXCONN) == 0) {
+		rts_info(eh, "Listening started on socket %d", sock.value);
 		return true;
 	} else {
 		// Sets errno on failure
@@ -84,7 +84,7 @@ bool socket_listen(rts_eh_t* eh, rts_sock_t sock) {
 
 bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
 
-	int client = accept(listener._value, NULL, NULL);
+	int client = accept(listener.value, NULL, NULL);
 
 	if (client < 0) {
 
@@ -92,17 +92,17 @@ bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
 
 		rts_warning(eh, "Accept of incoming connection produced invalid socket. errno is %d", current_errno);
 
-		new_client->_value = -1;
+		new_client->value = -1;
 		return false;
 	} else {
-		new_client->_value = client;
+		new_client->value = client;
 		return true;
 	}
 }
 
 bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read) {
 
-	int result = recv(sock._value, buffer, buffer_length, 0); // TODO: PEEK should be separate
+	int result = recv(sock.value, buffer, buffer_length, 0); // TODO: PEEK should be separate
 
 	if (result < 0) {
 

@@ -9,15 +9,15 @@ typedef struct {
 // Wrapper around a buffer designed to assist with recv calls
 typedef struct {
 
-	char* _data;
+	char* data;
 
-	int _length;
+	int length;
 
-	rts_sock_os_t* _os;
+	rts_sock_os_t* os;
 
-	rts_sock_t _sock;
+	rts_sock_t sock;
 
-	rt_sock_buffer_rw_t _rw;
+	rt_sock_buffer_rw_t rw;
 
 } rts_sock_buffer_t;
 

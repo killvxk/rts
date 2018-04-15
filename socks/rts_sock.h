@@ -5,7 +5,7 @@ typedef struct {
 
 	// Actual socket value. Doesn't need to be opaque per platform since 
 	// behaves the same across windows and unix
-	int _value;
+	int value;
 
 } rts_sock_t;
 

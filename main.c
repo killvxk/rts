@@ -15,7 +15,7 @@ int main()
 
 	rts_sock_t sock = os.open(log);
 
-	rts_info(log, "Socket %d", sock._value);
+	rts_info(log, "Socket %d", sock.value);
 	
 	os.bind(log, sock, 3272);
 
@@ -34,7 +34,7 @@ int main()
 			if (disconnect) {
 				rts_info(log, "Client disconnected");
 			} else {
-				rts_info(log, "%s", buf._data);
+				rts_info(log, "%s", buf.data);
 			}
 		}
 
