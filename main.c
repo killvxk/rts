@@ -13,17 +13,38 @@ int main()
 	
 	os.global_start(log);
 
-	rts_sock_t sock = os.open(log);
+	rts_sock_t listener = os.open(log);
 
-	rts_info(log, "Socket %d", sock.value);
+	rts_info(log, "Socket %d", listener.value);
 	
-	os.bind(log, sock, 3272);
+	os.bind(log, listener, 3272);
 
-	os.listen(log, sock);
+	os.listen(log, listener);
+
+	rts_sock_set_t* set = os.create_sock_set();
+	rts_sock_set_add(set, listener);
+
+	while (1) {
+		os.select(log, set, NULL);
+
+		if (rts_sock_set_is_set(set, listener)) {
+			rts_info(log, "Listener is set!");
+
+			rts_sock_t discard;
+
+			if (os.accept(log, listener, &discard)) {
+				os.close(log, discard);
+			}
+		}
+	}
 	
-	rts_sock_t incoming;
+	/*rts_sock_t incoming;
+
+	rts_sock_set_t* set = os.create_sock_set();
 
 	if (os.accept(log, sock, &incoming)) {
+
+		rts_sock_set_add(set, incoming);
 				
 		const char* hello = "Hello Mr Mac\r\n";
 		rts_sock_buffer_t buf = rts_sock_buffer_create(14, &os, incoming);
@@ -34,9 +55,11 @@ int main()
 
 		os.close(log, incoming);
 		rts_sock_buffer_destroy(&buf);
-	}
+	}*/
 
-	os.close(log, sock);
+	os.close(log, listener);
+
+	rts_sock_destroy_set(set);
 
 	os.global_stop(log);
 

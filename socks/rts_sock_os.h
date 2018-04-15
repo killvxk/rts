@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "rts_sock.h"
 #include "rts_eh.h"
+#include "rts_sock_set.h"
 
 typedef rts_sock_t rts_sock_os_open_handler(rts_eh_t* eh);
 
@@ -18,9 +19,13 @@ typedef bool rts_sock_os_recv_handler(rts_eh_t* eh, rts_sock_t sock, char* buffe
 
 typedef bool rts_sock_os_send_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent);
 
+typedef bool rts_sock_os_select_handler(rts_eh_t* eh, rts_sock_set_t* recv, rts_sock_set_t* send);
+
 typedef bool rts_sock_os_start_handler(rts_eh_t* eh);
 
 typedef void rts_sock_os_stop_handler(rts_eh_t* eh);
+
+typedef rts_sock_set_t* rts_sock_os_create_sock_set_handler();
 
 typedef struct {
 
@@ -52,6 +57,12 @@ typedef struct {
 
 	// Stop OS-level socket support
 	rts_sock_os_stop_handler* global_stop;
+
+	// Create a set of sockets for polling/tracking with select etc.
+	rts_sock_os_create_sock_set_handler* create_sock_set;
+
+	// Perform a select for sockets ready to read or write
+	rts_sock_os_select_handler* select;
 
 } rts_sock_os_t;
 

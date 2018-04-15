@@ -160,6 +160,66 @@ bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 	}
 }
 
+bool socket_select(rts_eh_t* eh, rts_sock_set_t* recv, rts_sock_set_t* send) {
+
+	fd_set* recv_fd = NULL;
+	fd_set* send_fd = NULL;
+
+	if (recv != NULL) {
+		recv_fd = &((rts_sock_windows_sock_set*)recv->os_specific)->set;
+	}
+
+	if (send != NULL) {
+		send_fd = &((rts_sock_windows_sock_set*)send->os_specific)->set;
+	}
+
+	int result = select(0, recv_fd, send_fd, NULL, NULL);
+
+	if (result == SOCKET_ERROR) {
+
+		rts_panic_winsock_error(eh, "Failed to select");
+
+		return false;
+	} else {
+		return true;
+	}
+}
+
+void add_sock_set(void* os_specific, rts_sock_t sock) {
+	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	FD_SET(sock.value, &(windows->set));
+}
+
+void clear_sock_set(void* os_specific, rts_sock_t sock) {
+	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	FD_CLR(sock.value, &(windows->set));
+}
+
+bool is_set_sock_set(void* os_specific, rts_sock_t sock) {
+	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	return FD_ISSET(sock.value, &(windows->set)) != 0;
+}
+
+void destroy_sock_set(void* os_specific) {
+	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	free(windows);
+}
+
+rts_sock_set_t* create_sock_set() {
+	rts_sock_set_t* set = rts_sock_create_set();
+	set->destroy = &destroy_sock_set;
+	set->add = &add_sock_set;
+	set->clear = &clear_sock_set;
+	set->is_set = &is_set_sock_set;
+
+	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)malloc(sizeof(rts_sock_windows_sock_set));
+	set->os_specific = windows;
+
+	FD_ZERO(&(windows->set));
+
+	return set;
+}
+
 void rts_sock_windows_attach(rts_sock_os_t* os) {
 	os->global_start = &winsock_start;
 	os->global_stop = &winsock_stop;
@@ -172,6 +232,9 @@ void rts_sock_windows_attach(rts_sock_os_t* os) {
 	os->accept = &socket_accept;
 	os->recv = &socket_recv;
 	os->send = &socket_send;
+
+	os->select = &socket_select;
+	os->create_sock_set = &create_sock_set;
 }
 
 
