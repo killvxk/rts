@@ -165,13 +165,13 @@ bool socket_select(rts_eh_t* eh, rts_sock_set_t* recv, rts_sock_set_t* send) {
 	fd_set* send_fd = NULL;
 
 	if (recv != NULL) {
-		recv_fd = &((rts_sock_windows_sock_set*)recv->os_specific)->set;
+		recv_fd = &((rts_sock_windows_sock_set_t*)recv->os_specific)->set;
 	}
 
 	if (send != NULL) {
-		send_fd = &((rts_sock_windows_sock_set*)send->os_specific)->set;
+		send_fd = &((rts_sock_windows_sock_set_t*)send->os_specific)->set;
 	}
-
+	
 	int result = select(0, recv_fd, send_fd, NULL, NULL);
 
 	if (result == SOCKET_ERROR) {
@@ -185,22 +185,22 @@ bool socket_select(rts_eh_t* eh, rts_sock_set_t* recv, rts_sock_set_t* send) {
 }
 
 void add_sock_set(void* os_specific, rts_sock_t sock) {
-	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	rts_sock_windows_sock_set_t* windows = (rts_sock_windows_sock_set_t*)os_specific;
 	FD_SET(sock.value, &(windows->set));
 }
 
 void clear_sock_set(void* os_specific, rts_sock_t sock) {
-	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	rts_sock_windows_sock_set_t* windows = (rts_sock_windows_sock_set_t*)os_specific;
 	FD_CLR(sock.value, &(windows->set));
 }
 
 bool is_set_sock_set(void* os_specific, rts_sock_t sock) {
-	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	rts_sock_windows_sock_set_t* windows = (rts_sock_windows_sock_set_t*)os_specific;
 	return FD_ISSET(sock.value, &(windows->set)) != 0;
 }
 
 void destroy_sock_set(void* os_specific) {
-	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
+	rts_sock_windows_sock_set_t* windows = (rts_sock_windows_sock_set_t*)os_specific;
 	rts_free(windows);
 }
 
@@ -211,8 +211,9 @@ rts_sock_set_t* create_sock_set() {
 	set->clear = &clear_sock_set;
 	set->is_set = &is_set_sock_set;
 
-	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)rts_alloc(0, sizeof(rts_sock_windows_sock_set));
+	rts_sock_windows_sock_set_t* windows = (rts_sock_windows_sock_set_t*)rts_alloc(0, sizeof(rts_sock_windows_sock_set_t));
 	set->os_specific = windows;
+	set->os_specific_size = sizeof(rts_sock_windows_sock_set_t);
 
 	FD_ZERO(&(windows->set));
 

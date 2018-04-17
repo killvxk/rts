@@ -61,7 +61,8 @@ typedef struct {
 	// Create a set of sockets for polling/tracking with select etc.
 	rts_sock_os_create_sock_set_handler* create_sock_set;
 
-	// Perform a select for sockets ready to read or write
+	// Perform a select for sockets ready to read or write.
+	// The select MODIFIES THE SOCKET SETS PROVIDED if they are ready to read or write
 	rts_sock_os_select_handler* select;
 
 } rts_sock_os_t;

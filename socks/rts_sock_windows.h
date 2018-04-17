@@ -8,11 +8,13 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+// Warning: sock_set depends on this struct being plain and not containing ptrs
+// for safe memcpy
 typedef struct {
 
 	fd_set set;
 
-} rts_sock_windows_sock_set;
+} rts_sock_windows_sock_set_t;
 
 // Attach all Windows related handlers to a given OS socket layer
 void rts_sock_windows_attach(rts_sock_os_t* os);

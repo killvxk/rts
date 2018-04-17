@@ -2,9 +2,10 @@
 #include "rts_os.h"
 #include "rts_sock_windows.h"
 #include "rts_sock_linux.h"
+#include "rts_alloc.h"
 
 #include <stdio.h>
-#include "rts_alloc.h"
+#include <string.h>
 
 static bool dummy_start(rts_eh_t* eh) {
 	return true;

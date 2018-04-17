@@ -2,7 +2,7 @@
 
 #ifdef RTS_PLAT_LINUX
 
-#include <stdlib.h>
+#include "rts_alloc.h"
 #include <string.h>
 
 rts_sock_t socket_open(rts_eh_t* eh) {
@@ -93,7 +93,7 @@ bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
 		new_client->value = -1;
 		return false;
 	} else {
-		new_client->value = client;
+		new_client->value = client;		
 		return true;
 	}
 }
@@ -131,14 +131,99 @@ bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 	}
 }
 
+bool socket_select(rts_eh_t* eh, rts_sock_set_t* recv, rts_sock_set_t* send) {
+
+	fd_set* recv_fd = NULL;
+	fd_set* send_fd = NULL;
+
+	// We have to calculate highest file descriptor across EVERY set
+	//
+	int highest = -1;
+
+	if (recv != NULL) {
+		recv_fd = &((rts_sock_linux_sock_set_t*)recv->os_specific)->set;
+
+		// Initial value for highest descriptor
+		highest = ((rts_sock_linux_sock_set_t*)recv->os_specific)->highest;
+	}
+
+	if (send != NULL) {
+		send_fd = &((rts_sock_linux_sock_set_t*)send->os_specific)->set;
+
+		// Now max against the first value vs. the highest in this set
+		highest = RTS_MAX(highest, ((rts_sock_linux_sock_set_t*)recv->os_specific)->highest);
+	}
+
+	int result = select(highest+1, recv_fd, send_fd, NULL, NULL);
+
+	if (result < 0) {
+
+		// Sets errno.		
+		rts_panic_unix_errno(eh, "Failed to select");
+
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+void add_sock_set(void* os_specific, rts_sock_t sock) {
+	rts_sock_linux_sock_set_t* lin = (rts_sock_linux_sock_set_t*)os_specific;
+	FD_SET(sock.value, &(lin->set));
+
+	lin->highest = RTS_MAX(lin->highest, sock.value);
+}
+
+void clear_sock_set(void* os_specific, rts_sock_t sock) {
+	rts_sock_linux_sock_set_t* lin = (rts_sock_linux_sock_set_t*)os_specific;
+	FD_CLR(sock.value, &(lin->set));
+
+	// TODO: No good way to modify highest known descriptor value (ever useful in practice?)
+}
+
+bool is_set_sock_set(void* os_specific, rts_sock_t sock) {
+	rts_sock_linux_sock_set_t* lin = (rts_sock_linux_sock_set_t*)os_specific;
+	return FD_ISSET(sock.value, &(lin->set)) != 0;
+}
+
+void destroy_sock_set(void* os_specific) {
+	rts_sock_linux_sock_set_t* lin = (rts_sock_linux_sock_set_t*)os_specific;
+	lin->highest = -1;
+	rts_free(lin);
+}
+
+rts_sock_set_t* create_sock_set() {
+	rts_sock_set_t* set = rts_sock_create_set();
+	set->destroy = &destroy_sock_set;
+	set->add = &add_sock_set;
+	set->clear = &clear_sock_set;
+	set->is_set = &is_set_sock_set;
+
+	rts_sock_linux_sock_set_t* lin = (rts_sock_linux_sock_set_t*)rts_alloc(0, sizeof(rts_sock_linux_sock_set_t));
+	set->os_specific = lin;
+	set->os_specific_size = sizeof(rts_sock_linux_sock_set_t);
+
+	FD_ZERO(&(lin->set));
+	lin->highest = -1;
+
+	return set;
+}
+
 void rts_sock_linux_attach(rts_sock_os_t* os) {
 	os->open = &socket_open;
 	os->close = &socket_close;
+
 	os->bind = &socket_bind;
 	os->listen = &socket_listen;
+
 	os->accept = &socket_accept;
+
 	os->recv = &socket_recv;
 	os->send = &socket_send;
+
+	os->select = &socket_select;
+	os->create_sock_set = &create_sock_set;
 }
 
 #endif
