@@ -31,7 +31,7 @@ int main()
 			rts_info(log, "Listener is set!");
 
 			rts_sock_t discard;
-
+			
 			if (os.accept(log, listener, &discard)) {
 				os.close(log, discard);
 			}

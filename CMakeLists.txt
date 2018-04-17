@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.6)
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
-include_directories(error socks common)
+include_directories(error socks common memory)
 file(GLOB_RECURSE RTS_SOURCES "*.c*")
 
 if (WIN32)

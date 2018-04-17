@@ -1,7 +1,7 @@
 #include "rts_sock_buffer.h"
 #include "rts_os.h"
+#include "rts_alloc.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 rts_sock_buffer_t rts_sock_buffer_create(int length, rts_sock_os_t* os, rts_sock_t sock) {
@@ -10,7 +10,7 @@ rts_sock_buffer_t rts_sock_buffer_create(int length, rts_sock_os_t* os, rts_sock
 	buffer.sock = sock;
 
 	buffer.length = sizeof(char) * length;
-	buffer.data = (char*)malloc(buffer.length);
+	buffer.data = (char*)rts_alloc(0, buffer.length);
 	
 	rts_sock_buffer_clear(&buffer);
 	
@@ -43,7 +43,7 @@ void rts_sock_buffer_clear(rts_sock_buffer_t* buffer) {
 }
 
 void rts_sock_buffer_destroy(rts_sock_buffer_t* buffer) {
-	free(buffer->data);
+	rts_free(buffer->data);
 	buffer->data = NULL;
 	buffer->length = 0;
 }
@@ -90,6 +90,8 @@ bool rts_sock_buffer_recv_until_full(rts_sock_buffer_t* buffer, rts_eh_t* eh, bo
 	if (must_null_terminate) {
 		rts_sock_buffer_null_terminate(buffer);
 	}
+
+	return true;
 }
 
 bool rts_sock_buffer_send_until_finished(rts_sock_buffer_t* buffer, rts_eh_t* eh) {
@@ -120,6 +122,8 @@ bool rts_sock_buffer_send_until_finished(rts_sock_buffer_t* buffer, rts_eh_t* eh
 		buffer->rw.read_index += bytes_sent;
 
 	} while (buffer->rw.read_index < buffer->length);
+
+	return true;
 }
 
 void rts_sock_buffer_null_terminate(rts_sock_buffer_t* buffer) {

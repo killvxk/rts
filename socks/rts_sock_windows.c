@@ -4,8 +4,7 @@
 #include "rts_sock_windows.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "rts_alloc.h"
 
 bool winsock_start(rts_eh_t* eh) {
 	WSADATA wsa_data;
@@ -62,7 +61,7 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 
 	int ret = getaddrinfo(NULL, service_name, &hint_struct, &result);
 		
-	free(service_name);
+	rts_free(service_name);
 
 	if (ret != 0) {
 		// Returns WSA error code directly, doesn't set last error
@@ -202,7 +201,7 @@ bool is_set_sock_set(void* os_specific, rts_sock_t sock) {
 
 void destroy_sock_set(void* os_specific) {
 	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)os_specific;
-	free(windows);
+	rts_free(windows);
 }
 
 rts_sock_set_t* create_sock_set() {
@@ -212,7 +211,7 @@ rts_sock_set_t* create_sock_set() {
 	set->clear = &clear_sock_set;
 	set->is_set = &is_set_sock_set;
 
-	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)malloc(sizeof(rts_sock_windows_sock_set));
+	rts_sock_windows_sock_set* windows = (rts_sock_windows_sock_set*)rts_alloc(0, sizeof(rts_sock_windows_sock_set));
 	set->os_specific = windows;
 
 	FD_ZERO(&(windows->set));

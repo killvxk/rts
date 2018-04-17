@@ -4,8 +4,7 @@
 #include "rts_sock_linux.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "rts_alloc.h"
 
 static bool dummy_start(rts_eh_t* eh) {
 	return true;
@@ -34,7 +33,7 @@ rts_sock_os_t rts_sock_os_create(rts_eh_t* eh) {
 char* rts_sock_parse_port(int port) {
 
 	// 65535 = max 5 chars + NULL TERMINATOR
-	char* name = malloc(sizeof(char) * 6);
+	char* name = rts_alloc(0, sizeof(char) * 6);
 	memset(name, 0, 6);
 	snprintf(name, 6, "%d", port);
 

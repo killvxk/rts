@@ -6,7 +6,7 @@ typedef void rts_sock_set_destroy_handler(void* os_data);
 
 typedef void rts_sock_set_add_handler(void* os_data, rts_sock_t sock);
 typedef void rts_sock_set_clear_handler(void* os_data, rts_sock_t sock);
-typedef void rts_sock_set_is_set_handler(void* os_data, rts_sock_t sock);
+typedef bool rts_sock_set_is_set_handler(void* os_data, rts_sock_t sock);
 
 // Set of sockets - opaque wrapper around fd_set et al.
 typedef struct {
