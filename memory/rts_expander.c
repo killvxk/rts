@@ -116,3 +116,36 @@ void rts_expander_get_item(rts_eh_t* eh, rts_expander_t* e, int index, void* rea
 
 	rts_expander_read(eh, e, index * size, read_into, size);
 }
+
+void rts_expander_remove_item(rts_eh_t* eh, rts_expander_t* e, int index, int size) {
+	RTS_ASSERT(eh, index >= 0 && index < e->items);
+
+	RTS_ASSERT(eh, index * size >= 0 && index * size < e->total_buffer_size_bytes);
+	RTS_ASSERT(eh, ((index * size) + size) < e->total_buffer_size_bytes);
+
+	// Make the data to be removed easily recognised
+	memset(e->data + (index * size), 126, size);
+		
+	memmove(
+		e->data + (index * size), // Dest = what we just removed's STARTING point
+
+		e->data + (index * size) + size, // Src = what is AFTER the item we are removing
+
+		(e->total_buffer_size_bytes - ((index * size) + size))); // Size is the length betwen the end of the
+															   // item we removed and the end of the buffer
+
+	e->items--;
+	
+	// There is now garbage at the end of the buffer (Maybe? Docs do not state) - zero out between the end of the last 
+	// and the total size of the buffer
+
+	int last_item = e->items - 1;
+
+	memset(
+		e->data + ((last_item * size) + size),  // Last item's END point
+		'0',
+		(e->total_buffer_size_bytes - ((last_item * size) + size))); // length between the end of the last item 
+																	// and the end of the buffer
+
+
+}

@@ -40,10 +40,13 @@ void rts_expander_grow_specific(rts_eh_t* eh, rts_expander_t* e, int demand_tota
 // Add an item. Item-level tracking only works if all items are of uniform size
 void rts_expander_add_item(rts_eh_t* eh, rts_expander_t* e, void* data, int size);
 
-// Get an ite, by its index (not byte offset) - see the items member.
+// Get an item, by its index (not byte offset) - see the items member.
 // Item-level tracking only works if all items are of uniform size
 void rts_expander_get_item(rts_eh_t* eh, rts_expander_t* e, int index, void* read_into, int size);
 
+// Remove an item by its index (not byte offset)
+// Item-level tracking only works if all items are of uniform size - removal especially so!
+void rts_expander_remove_item(rts_eh_t* eh, rts_expander_t* e, int index, int size);
 
 // Write data to the buffer. Will dynamically expand if the data does not fit
 void rts_expander_write(rts_eh_t* eh, rts_expander_t* e, int offset, void* data, int size);

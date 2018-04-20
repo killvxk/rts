@@ -2,6 +2,7 @@
 #include "socks/rts_sock_os.h"
 #include "socks/rts_sock_buffer.h"
 #include "memory/rts_expander.h"
+#include "socks/rts_sock_roster.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -13,79 +14,53 @@ int main()
 	rts_eh_t t = rts_eh_create_generic();
 	rts_eh_t* log = &t;	
 
-	//rts_sock_os_t os = rts_sock_os_create(log);
-	//
-	//os.global_start(log);
+	rts_sock_os_t os = rts_sock_os_create(log);
+	
+	os.global_start(log);
 
-	//rts_sock_t listener = os.open(log);
+	rts_sock_t listener = os.open(log);
 
-	//rts_info(log, "Socket %d", listener.value);
-	//
-	//os.bind(log, listener, 3272);
+	rts_info(log, "Socket %d", listener.value);
+	
+	os.bind(log, listener, 3272);
 
-	//os.listen(log, listener);
+	os.listen(log, listener);
 
-	rts_expander_t* expander = rts_expander_create(log, 64);
+	
+	rts_sock_set_t* set = os.create_sock_set();
+	rts_sock_set_add(set, listener);
 
-	/*int out;
+	rts_sock_set_t* select_only = os.create_sock_set();
 
-	rts_expander_write(log, expander, 1, &test, sizeof(int));
+	rts_sock_t discard;
+	while (1) {
 
-	rts_expander_write(log, expander, 18, &test, sizeof(int));
+		rts_sock_copy_set(set, select_only);
 
-	rts_expander_read(log, expander, 18, &out, sizeof(int));*/
+		if (!os.select(log, select_only, NULL)) {
+			rts_warning(log, "Select problem");
+		}
 
-	for (int i = 100; i <= 116; i++) {
-		rts_expander_add_item(log, expander, &i, sizeof(int));
+		if (rts_sock_set_is_set(select_only, listener)) {
+			rts_info(log, "Listener is set!");			
+			
+			if (os.accept(log, listener, &discard)) {				
+				rts_info(log, "New client!");
+				rts_sock_set_add(set, discard);
+				break;
+			} else {
+				rts_warning(log, "Select failed!");
+			}
+		}
 	}
 
-	for (int i = 0; i < expander->items; i++) {
-		rts_expander_get_item(log, expander, i, &test, sizeof(int));
+	os.close(log, discard);
+	os.close(log, listener);
 
-		rts_info(log, "%d", test);
-	}
+	rts_sock_destroy_set(select_only);
+	rts_sock_destroy_set(set);
 
-/*
-	rts_expander_grow_specific(log, expander, 40);
-	rts_expander_grow_specific(log, expander, 56);
-	rts_expander_grow_specific(log, expander, 64);*/
-
-	rts_expander_destroy(log, expander);
-
-	//rts_sock_set_t* set = os.create_sock_set();
-	//rts_sock_set_add(set, listener);
-
-	//rts_sock_set_t* select_only = os.create_sock_set();
-
-	//rts_sock_t discard;
-	//while (1) {
-
-	//	rts_sock_copy_set(set, select_only);
-
-	//	if (!os.select(log, select_only, NULL)) {
-	//		rts_warning(log, "Select problem");
-	//	}
-
-	//	if (rts_sock_set_is_set(select_only, listener)) {
-	//		rts_info(log, "Listener is set!");			
-	//		
-	//		if (os.accept(log, listener, &discard)) {				
-	//			rts_info(log, "New client!");
-	//			rts_sock_set_add(set, discard);
-	//			break;
-	//		} else {
-	//			rts_warning(log, "Select failed!");
-	//		}
-	//	}
-	//}
-
-	//os.close(log, discard);
-	//os.close(log, listener);
-
-	//rts_sock_destroy_set(select_only);
-	//rts_sock_destroy_set(set);
-
-	//os.global_stop(log);
+	os.global_stop(log);
 
 	return 0;
 }
