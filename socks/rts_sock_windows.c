@@ -38,6 +38,23 @@ rts_sock_t socket_open(rts_eh_t* eh) {
 		rts_panic_winsock_error(eh, "Open generated invalid socket");
 	}
 
+	int enable = 1;
+
+	// Always permit reuse of address
+	if (setsockopt(sock.value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
+		rts_panic_winsock_error(eh, "Failed to enable address reuse for new socket");
+	}
+
+	// Do not await buffered writes before shutdown
+	if (setsockopt(sock.value, SOL_SOCKET, SO_DONTLINGER, (const char*)&enable, sizeof(enable)) != 0) {
+		rts_panic_winsock_error(eh, "Failed to enable non-linger for new socket");
+	}
+
+	// Do not use Nagle's algorithm
+	if (setsockopt(sock.value, IPPROTO_TCP, TCP_NODELAY, (const char*)&enable, sizeof(enable)) != 0) {
+		rts_panic_winsock_error(eh, "Failed to disable Nagle's algorithm for new socket");
+	}
+
 	return sock;
 }
 
@@ -67,17 +84,7 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 		// Returns WSA error code directly, doesn't set last error
 		rts_panic(eh, "Failed to get address info from current host, code: %d", ret);
 		return false;
-	}
-
-	// Always permit reuse of address
-	int enable = 1;
-
-	if (setsockopt(sock.value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
-		// Sets a specific WSA error
-		rts_panic_winsock_error(eh, "Failed to enable address reuse before bind");
-		freeaddrinfo(result);
-		return false;
-	}
+	}	
 
 	if (bind(sock.value, result->ai_addr, result->ai_addrlen) == 0) {		
 		freeaddrinfo(result);

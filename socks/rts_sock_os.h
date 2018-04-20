@@ -29,7 +29,10 @@ typedef rts_sock_set_t* rts_sock_os_create_sock_set_handler();
 
 typedef struct {
 
-	// Open an actual socket. *Always* TCP/IP 
+	// Open an actual socket. *Always* TCP/IP with
+	// - TCP_NODELAY
+	// - SO_REUSEADDR
+	// - SO_DONTLINGER
 	rts_sock_os_open_handler* open;
 
 	// Close an actual socket

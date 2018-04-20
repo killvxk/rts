@@ -14,6 +14,28 @@ rts_sock_t socket_open(rts_eh_t* eh) {
 		rts_panic_unix_errno(eh, "Open generated invalid socket");
 	}
 
+	int enable = 1;
+
+	// Always permit reuse of address
+	if (setsockopt(sock.value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
+		rts_panic_unix_errno(eh, "Failed to enable address reuse for new socket");
+	}
+
+	// Do not await buffered writes before shutdown
+	//
+	struct linger linger_opt; 
+	linger_opt.l_onoff = 0;
+	linger_opt.l_linger = 0;
+
+	if (setsockopt(sock.value, SOL_SOCKET, SO_LINGER, &linger_opt, sizeof(struct linger)) != 0) {
+		rts_panic_unix_errno(eh, "Failed to enable non-linger for new socket");
+	}
+
+	// Do not use Nagle's algorithm
+	if (setsockopt(sock.value, IPPROTO_TCP, TCP_NODELAY, (const char*)&enable, sizeof(enable)) != 0) {
+		rts_panic_unix_errno(eh, "Failed to disable Nagle's algorithm for new socket");
+	}
+
 	return sock;
 }
 
@@ -43,16 +65,6 @@ bool socket_bind(rts_eh_t* eh, rts_sock_t sock, int port) {
 	if (ret != 0) {
 		// Returns EAI error codes which could be translated with gai_strerror
 		rts_panic(eh, "Failed to get address info from current host, code: %d", ret);
-		return false;
-	}
-
-	// Always permit reuse of address
-	int enable = 1;
-
-	if (setsockopt(sock.value, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0) {
-		// Sets errno on failure
-		rts_panic_unix_errno(eh, "Failed to enable address reuse before bind");
-		freeaddrinfo(result);
 		return false;
 	}
 
