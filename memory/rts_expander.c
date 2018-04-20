@@ -143,7 +143,7 @@ void rts_expander_remove_item(rts_eh_t* eh, rts_expander_t* e, int index, int si
 
 	memset(
 		e->data + ((last_item * size) + size),  // Last item's END point
-		'0',
+		0,
 		(e->total_buffer_size_bytes - ((last_item * size) + size))); // length between the end of the last item 
 																	// and the end of the buffer
 
