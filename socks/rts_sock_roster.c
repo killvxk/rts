@@ -2,15 +2,21 @@
 
 #include "rts_alloc.h"
 
+void destruct_socket(void* data, void* userdata) {
+	((rts_sock_os_t*)userdata)->close(NULL, *((rts_sock_t*)data));
+}
+
 rts_sock_roster_t* rts_sock_roster_create(rts_sock_os_t* owning_os) {
 	rts_sock_roster_t* r = rts_alloc(0, sizeof(rts_sock_roster_t));
 
 	// Room for 4 socks by default
 	// TODO: Maybe should pass down an incoming error handler?
 	r->all_socks = rts_expander_create(NULL, sizeof(rts_sock_t) * 4);
-
+		
 	r->owning_os = owning_os;
 	r->master = owning_os->create_sock_set();
+
+	rts_expander_register_destructor(r->all_socks, sizeof(rts_sock_t), r->owning_os, true, &destruct_socket);
 
 	r->select_readable_temporary = owning_os->create_sock_set();
 	r->select_writeable_temporary = owning_os->create_sock_set();
@@ -20,18 +26,7 @@ rts_sock_roster_t* rts_sock_roster_create(rts_sock_os_t* owning_os) {
 
 void rts_sock_roster_destroy(rts_sock_roster_t* r, bool close_all_socks) {
 
-	if (close_all_socks) {
-		for (int i = 0; i < r->all_socks->items; i++) {
-
-			rts_sock_t sock;
-
-			rts_expander_get_item(NULL, r->all_socks, i, &sock, sizeof(rts_sock_t));
-
-			r->owning_os->close(NULL, sock);
-		}
-	}
-
-	rts_expander_destroy(NULL, r->all_socks);
+	rts_expander_destroy(NULL, r->all_socks, close_all_socks, r->owning_os);
 	rts_sock_destroy_set(r->master);
 
 	rts_sock_destroy_set(r->select_readable_temporary);

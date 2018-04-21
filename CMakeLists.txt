@@ -11,6 +11,5 @@ if (WIN32)
 	set(SOCKET_LIBRARIES ${WSOCK32_LIBRARY} ${WS2_32_LIBRARY})
 endif()
 
-
 add_executable (rts ${RTS_SOURCES})
 target_link_libraries(rts ${SOCKET_LIBRARIES})

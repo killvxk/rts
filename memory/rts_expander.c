@@ -2,7 +2,7 @@
 #include "rts_alloc.h"
 #include <string.h>
 
-int default_grow_policy(int current_size_bytes, int minimum_total_size_bytes) {
+static int default_grow_policy(int current_size_bytes, int minimum_total_size_bytes) {
 
 	int typical = current_size_bytes * 2;
 
@@ -25,6 +25,12 @@ rts_expander_t* rts_expander_create(rts_eh_t* eh, int size_in_bytes) {
 	e->data = (char*)rts_alloc(0, size_in_bytes);
 	e->total_buffer_size_bytes = size_in_bytes;
 	e->grow_policy = &default_grow_policy;
+
+	e->destructor.assumed_item_size = 0;
+	e->destructor.userdata = NULL;
+	e->destructor.handler = NULL;
+	e->destructor.on_item_remove = false;
+
 	rts_expander_clear(e);
 	return e;
 }
@@ -34,11 +40,27 @@ void rts_expander_clear(rts_expander_t* e) {
 	e->items = 0;
 }
 
-void rts_expander_destroy(rts_eh_t* eh, rts_expander_t* e) {
+void rts_expander_register_destructor(rts_expander_t* e, int item_size, void* userdata, bool on_remove, rts_expander_destruct_handler* handler) {
+	e->destructor.assumed_item_size = item_size;
+	e->destructor.userdata = userdata;
+	e->destructor.handler = handler;
+	e->destructor.on_item_remove = on_remove;
+}
+
+void rts_expander_destroy(rts_eh_t* eh, rts_expander_t* e, bool destruct_items, void* destructor_info) {
 
 #ifdef RTS_EXPANDER_DEBUG
 	rts_info(eh, "Destroy expanding buffer size %db", e->total_buffer_size_bytes);
 #endif 
+
+	if (destruct_items) {
+		if (e->destructor.handler != NULL) {
+
+			for (int i = 0; i < e->items; i++) {
+				e->destructor.handler( (char*)e->data + (i * e->destructor.assumed_item_size), e->destructor.userdata);
+			}
+		}
+	}
 
 	rts_free(e->data);
 	
@@ -151,6 +173,12 @@ void rts_expander_remove_item(rts_eh_t* eh, rts_expander_t* e, int index, int si
 
 	RTS_ASSERT(eh, index * size >= 0 && index * size < e->total_buffer_size_bytes);
 	RTS_ASSERT(eh, ((index * size) + size) < e->total_buffer_size_bytes);
+
+	// Destroy the item itself / its resources if configured to do so
+	if (e->destructor.on_item_remove && e->destructor.handler != NULL) {
+		RTS_ASSERT(eh, e->destructor.assumed_item_size == size);
+		e->destructor.handler((char*)e->data + (index * size), e->destructor.userdata);
+	}
 
 	// Make the data to be removed easily recognised
 	memset(e->data + (index * size), 126, size);

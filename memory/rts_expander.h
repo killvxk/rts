@@ -12,8 +12,26 @@
 // Implementations should not ever return a size smaller than the minimum
 typedef int rts_expander_grow_handler(int current_size_bytes, int minimum_total_size_bytes);
 
-// Expanding buffer
+// Destructor for an individual item
+typedef void rts_expander_destruct_handler(void* item, void* userdata);
+
 typedef struct {
+
+	// Assumed size of each item
+	int assumed_item_size;
+
+	// Arbitrary user data
+	void* userdata;
+
+	// Run every time an item is removed
+	bool on_item_remove;
+
+	rts_expander_destruct_handler* handler;
+
+} rts_expander_destructor_t;
+
+// Expanding buffer
+typedef struct rts_expander_struct {
 
 	char* data;
 
@@ -24,6 +42,9 @@ typedef struct {
 
 	rts_expander_grow_handler* grow_policy;
 
+	// Destructor info
+	rts_expander_destructor_t destructor;
+
 	// Total quantity of items written. This value is only useful if the 
 	// buffer contains values of uniform type
 	int items;
@@ -31,6 +52,8 @@ typedef struct {
 } rts_expander_t;
 
 rts_expander_t* rts_expander_create(rts_eh_t* eh, int size_in_bytes);
+
+void rts_expander_register_destructor(rts_expander_t* e, int item_size, void* userdata, bool on_remove, rts_expander_destruct_handler* handler);
 
 void rts_expander_clear(rts_expander_t* e);
 
@@ -64,4 +87,4 @@ bool rts_expander_write_will_grow(rts_eh_t* eh, rts_expander_t* e, int index, in
 // Read data from the buffer. If the request is larger than the buffer, the buffer will panic
 void rts_expander_read(rts_eh_t* eh, rts_expander_t* e, int index, void* read_into, int size);
 
-void rts_expander_destroy(rts_eh_t* eh, rts_expander_t* e);
+void rts_expander_destroy(rts_eh_t* eh, rts_expander_t* e, bool destruct_items, void* destructor_info);

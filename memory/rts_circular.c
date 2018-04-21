@@ -1,7 +1,7 @@
 #include "rts_circular.h"
 #include "rts_alloc.h"
 
-int no_grow(int current_size_bytes, int minimum_total_size_bytes) {
+static int no_grow(int current_size_bytes, int minimum_total_size_bytes) {
 	rts_panic(NULL, "Circular buffer should never grow! (%db -> %db)", current_size_bytes, minimum_total_size_bytes);
 
 	return -1;
@@ -17,7 +17,7 @@ rts_circular_t* rts_circular_create(rts_eh_t* eh, int size_in_bytes) {
 }
 
 void rts_circular_destroy(rts_eh_t* eh, rts_circular_t* c) {
-	rts_expander_destroy(eh, c->buffer);
+	rts_expander_destroy(eh, c->buffer, false, NULL);
 	rts_free(c);
 }
 
