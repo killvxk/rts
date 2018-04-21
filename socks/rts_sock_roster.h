@@ -15,7 +15,9 @@ typedef struct {
 
 	// Temporary used only for select() calls (since it mutates the master
 	// sock set otherwise)
-	rts_sock_set_t* select_temporary;
+	rts_sock_set_t* select_readable_temporary;
+	
+	rts_sock_set_t* select_writeable_temporary;
 
 	rts_sock_os_t* owning_os;
 
@@ -32,4 +34,8 @@ void rts_sock_roster_remove(rts_sock_roster_t* r, int index);
 
 bool rts_sock_roster_select(rts_eh_t* eh, rts_sock_roster_t* r);
 
-bool rts_sock_roster_is_set(rts_sock_roster_t* r, rts_sock_t sock);
+bool rts_sock_roster_is_receive_ready(rts_sock_roster_t* r, rts_sock_t sock);
+
+bool rts_sock_roster_is_send_ready(rts_sock_roster_t* r, rts_sock_t sock);
+
+rts_sock_t rts_roster_get_sock(rts_sock_roster_t* r, int index);

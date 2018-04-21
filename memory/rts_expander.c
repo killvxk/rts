@@ -76,34 +76,63 @@ void rts_expander_grow_specific(rts_eh_t* eh, rts_expander_t* e, int demand_tota
 	e->total_buffer_size_bytes = demand_total_size_bytes;
 }
 
-void rts_expander_write(rts_eh_t* eh, rts_expander_t* e, int offset, void* data, int size) {
-	RTS_ASSERT(eh, offset >= 0 && offset < e->total_buffer_size_bytes);
-
-	int end_offset = offset + size;
+bool rts_expander_write_will_grow(rts_eh_t* eh, rts_expander_t* e, int index, int size, int* margin_bytes) {
 	
-	if (end_offset >= e->total_buffer_size_bytes) {
+	// The index is allowed to be one-over the total size of the buffer, since such 
+	// a thing is what prompts us to grow
+	RTS_ASSERT(eh, index >= 0 && index <= e->total_buffer_size_bytes);
+
+	int end_index = (index + (size - 1));
+
+	if (end_index > (e->total_buffer_size_bytes - 1)) {
 
 		// How many bytes we're too big by
-		int margin_size_bytes = end_offset - (e->total_buffer_size_bytes - 1); // -1 turns size -> valid index
+		*margin_bytes = end_index - (e->total_buffer_size_bytes - 1); // -1 turns size -> valid index
 
+		RTS_ASSERT(eh, *margin_bytes != 0);
+
+		return true;
+	} else {
+		*margin_bytes = 0;
+		return false;
+	}
+}
+
+void rts_expander_write_no_grow(rts_eh_t* eh, rts_expander_t* e, int index, void* data, int size) {
+	RTS_ASSERT(eh, index >= 0 && index < e->total_buffer_size_bytes);
+	RTS_ASSERT(eh, (index + (size - 1)) < e->total_buffer_size_bytes);
+
+	memcpy(e->data + index, data, size);
+}
+
+void rts_expander_write(rts_eh_t* eh, rts_expander_t* e, int index, void* data, int size) {
+	
+	// Index is allowed to be = total size in bytes (i.e. buffer overflow)
+	// because this *prompts* us to grow the buffer
+	RTS_ASSERT(eh, index >= 0 && index <= e->total_buffer_size_bytes);
+
+	if (size == 0) {
+		return;
+	}
+
+	int margin_size_bytes = 0;
+
+	if (rts_expander_write_will_grow(eh, e, index, size, &margin_size_bytes)) {
 		rts_expander_grow_now(eh, e, e->total_buffer_size_bytes + margin_size_bytes);
 	}
 
-	// Should now definitely fit
-	RTS_ASSERT(eh, (offset + size) < e->total_buffer_size_bytes);
-
-	memcpy(e->data + offset, data, size);	
+	rts_expander_write_no_grow(eh, e, index, data, size);
 }
 
-void rts_expander_read(rts_eh_t* eh, rts_expander_t* e, int offset, void* read_into, int size) {
-	RTS_ASSERT(eh, offset >= 0 && offset < e->total_buffer_size_bytes);
+void rts_expander_read(rts_eh_t* eh, rts_expander_t* e, int index, void* read_into, int size) {
+	RTS_ASSERT(eh, index >= 0 && index < e->total_buffer_size_bytes);
 
-	if (offset + size >= e->total_buffer_size_bytes) {
+	if ((index + (size - 1)) >= e->total_buffer_size_bytes) {
 		// We don't grow for reads
-		rts_panic(eh, "Read from offset %d size %db exceeds buffer size %d", offset, size, e->total_buffer_size_bytes);
+		rts_panic(eh, "Read from offset %d size %db exceeds buffer size %d", index, size, e->total_buffer_size_bytes);
 	}
 
-	memcpy(read_into, e->data + offset, size);
+	memcpy(read_into, e->data + index, size);
 }
 
 void rts_expander_add_item(rts_eh_t* eh, rts_expander_t* e, void* data, int size) {

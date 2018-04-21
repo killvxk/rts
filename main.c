@@ -3,21 +3,20 @@
 #include "socks/rts_sock_buffer.h"
 #include "memory/rts_expander.h"
 #include "socks/rts_sock_roster.h"
+#include "memory/rts_circular.h"
 
 #include <stdio.h>
 #include <string.h>
 
 int main()
 {	
-	int test = 42;
-
 	rts_eh_t t = rts_eh_create_generic();
 	rts_eh_t* log = &t;	
 
 	rts_sock_os_t os = rts_sock_os_create(log);
 	
 	os.global_start(log);
-
+	
 	rts_sock_t listener = os.open(log);
 
 	rts_info(log, "Socket %d", listener.value);
@@ -39,7 +38,7 @@ int main()
 
 		// Always check the listener (index 0) first before iterating the set
 		//		
-		if (rts_sock_roster_is_set(roster, listener)) {
+		if (rts_sock_roster_is_receive_ready(roster, listener)) {
 			rts_info(log, "Listener is set!");			
 			
 			rts_sock_t new_socket;
@@ -50,21 +49,18 @@ int main()
 			} else {
 				rts_warning(log, "Select failed!");
 			}
-		}
-			
+		}			
 
 		for (int i = 1; i < roster->all_socks->items; i++) {
 
-			rts_sock_t current; 
+			rts_sock_t current = rts_roster_get_sock(roster, i);
 
-			rts_expander_get_item(log, roster->all_socks, i, &current, sizeof(rts_sock_t));
-
-			if (rts_sock_roster_is_set(roster, current)) {
+			if (rts_sock_roster_is_receive_ready(roster, current)) {
 				rts_info(log, "Socket %d has data", current.value);
 
 				int bytes = 0;
 
-				rts_sock_buffer_t buf = rts_sock_buffer_create(64, &os, current);
+				rts_sock_buffer_t buf = rts_sock_buffer_create(1024, &os, current);
 
 				bool ok = rts_sock_buffer_recv(&buf, log, &bytes);
 
@@ -91,9 +87,7 @@ int main()
 
 					int sent;
 
-					rts_sock_t peer;
-
-					rts_expander_get_item(log, roster->all_socks, other, &peer, sizeof(rts_sock_t));
+					rts_sock_t peer = rts_roster_get_sock(roster, other);
 
 					os.send(log, peer, buf.data, buf.length, &sent);
 				}

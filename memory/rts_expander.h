@@ -1,5 +1,6 @@
 #pragma once
 #include "rts_eh.h"
+#include <stdbool.h>
 
 #define RTS_EXPANDER_DEBUG
 
@@ -49,9 +50,18 @@ void rts_expander_get_item(rts_eh_t* eh, rts_expander_t* e, int index, void* rea
 void rts_expander_remove_item(rts_eh_t* eh, rts_expander_t* e, int index, int size);
 
 // Write data to the buffer. Will dynamically expand if the data does not fit
-void rts_expander_write(rts_eh_t* eh, rts_expander_t* e, int offset, void* data, int size);
+void rts_expander_write(rts_eh_t* eh, rts_expander_t* e, int index, void* data, int size);
+
+// Write data to the buffer without any attempt to grow. 
+// It is expected the caller has performed rts_expander_write_will_grow etc. to determine if
+// the data will fit
+void rts_expander_write_no_grow(rts_eh_t* eh, rts_expander_t* e, int index, void* data, int size);
+
+// Whether a write to the given index will trigger growth of the buffer. 
+// margin_bytes is set to how much the buffer will grow *by* to accomodate the data being written
+bool rts_expander_write_will_grow(rts_eh_t* eh, rts_expander_t* e, int index, int size, int* margin_bytes);
 
 // Read data from the buffer. If the request is larger than the buffer, the buffer will panic
-void rts_expander_read(rts_eh_t* eh, rts_expander_t* e, int offset, void* read_into, int size);
+void rts_expander_read(rts_eh_t* eh, rts_expander_t* e, int index, void* read_into, int size);
 
 void rts_expander_destroy(rts_eh_t* eh, rts_expander_t* e);
