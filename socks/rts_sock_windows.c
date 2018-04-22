@@ -55,6 +55,14 @@ rts_sock_t socket_open(rts_eh_t* eh) {
 		rts_panic_winsock_error(eh, "Failed to disable Nagle's algorithm for new socket");
 	}
 
+	// Enable non-blocking
+	u_long blocking = 0;
+	int blocking_result = ioctlsocket(sock.value, FIONBIO, &blocking);
+
+	if (blocking_result != NO_ERROR) {
+		rts_panic(eh, "Failed to enable non-blocking for new socket - ioctlsocket failed with code %ld", blocking);
+	}
+
 	return sock;
 }
 
@@ -131,7 +139,7 @@ bool socket_accept(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client) {
 	}
 }
 
-bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read) {
+bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read, bool* would_block) {
 
 	int result = recv(sock.value, buffer, buffer_length, 0); // TODO: PEEK should be separate
 
@@ -139,6 +147,13 @@ bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 		*bytes_read = -1;
 
 		int err = WSAGetLastError();
+
+		// We didn't succeed but it's because we're blocking, not an error
+		if (err == WSAEWOULDBLOCK) {
+			*would_block = true;
+			return false;
+		}
+
 		rts_warning(eh, "Receive from socket failed. WSAGetLastError is %d", err);
 
 		return false;
@@ -149,7 +164,7 @@ bool socket_recv(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 	}
 }
 
-bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent) {
+bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent, bool* would_block) {
 
 	int result = send(sock.value, buffer, buffer_length, 0);
 
@@ -157,6 +172,13 @@ bool socket_send(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length,
 		*bytes_sent = -1;
 
 		int err = WSAGetLastError();
+
+		// We didn't succeed but it's because we're blocking, not an error
+		if (err == WSAEWOULDBLOCK) {
+			*would_block = true;
+			return false;
+		}
+
 		rts_warning(eh, "Send to socket peer failed. WSAGetLastError is %d", err);
 
 		return false;

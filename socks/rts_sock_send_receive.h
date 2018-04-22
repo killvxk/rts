@@ -11,6 +11,12 @@ typedef struct {
 
 	rts_circular_t* receive;
 
+	// Buffer used for intermediate calls before a proper write
+	// can be done to circular buffers
+	char* scratch;
+
+	int scratch_length;
+
 } rts_sock_send_receive_t;
 
 rts_sock_send_receive_t* rts_sock_send_receive_create(rts_eh_t* eh, rts_sock_t sock);

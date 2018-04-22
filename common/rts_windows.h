@@ -10,4 +10,7 @@
 
 #include <windows.h>
 
+#define PTW32_INCLUDE_WINDOWS_H
+#define HAVE_STRUCT_TIMESPEC
+
 #endif

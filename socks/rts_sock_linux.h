@@ -16,6 +16,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 
 // Warning: sock_set depends on this struct being plain and not containing ptrs
 // for safe memcpy

@@ -1,11 +1,11 @@
 #include "error/rts_eh.h"
 #include "socks/rts_sock_os.h"
-#include "socks/rts_sock_buffer.h"
 #include "memory/rts_expander.h"
 #include "socks/rts_sock_roster.h"
 #include "memory/rts_circular.h"
 #include "socks/rts_sock_io_control.h"
 
+#include "common/rts_threading.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -30,7 +30,7 @@ int main()
 	rts_sock_io_control_add(log, io, listener);
 		
 	bool exit = false;
-
+	
 	while (!exit) {
 				
 		if (!rts_sock_roster_select(log, io->roster)) {
@@ -57,43 +57,25 @@ int main()
 			rts_sock_t current = rts_roster_get_sock(io->roster, i);
 
 			if (rts_sock_roster_is_receive_ready(io->roster, current)) {
-				rts_info(log, "Socket %d has data", current.value);
 
-				int bytes = 0;
+				RTS_E_SOCK_RESULT result = rts_sock_io_control_recv(log, io, i);
 
-				rts_sock_buffer_t buf = rts_sock_buffer_create(1024, &os, current);
+				if (result == RTS_E_SOCK_OK) {
 
-				bool ok = rts_sock_buffer_recv(&buf, log, &bytes);
 
-				if (!ok || bytes == 0) {
-					rts_info(log, "%d disconnected or errored", current.value);
-					rts_sock_buffer_destroy(&buf);
-					rts_sock_io_control_remove(io, i);
-					break;
-				}				
-				
-				rts_sock_buffer_null_terminate(&buf);
-				rts_info(log, buf.data);
+				} else {
 
-				if (buf.data[0] == 'q') {
-					exit = true;
+					// Ignore WOULD_BLOCK and come back later
+
+					if (result == RTS_E_SOCK_DISCONNECT_NOW) {
+						rts_sock_io_control_remove(io, i);
+						break;
+					}					
 				}
+			}
 
-				// Send to all other clients
-				for (int other = 1; other < io->roster->all_socks->items; other++) {
+			if (rts_sock_roster_is_send_ready(io->roster, current)) {
 
-					if (other == i) {
-						continue;
-					}
-
-					int sent;
-
-					rts_sock_t peer = rts_roster_get_sock(io->roster, other);
-
-					os.send(log, peer, buf.data, buf.length, &sent);
-				}
-
-				rts_sock_buffer_destroy(&buf);
 			}
 		}
 	}

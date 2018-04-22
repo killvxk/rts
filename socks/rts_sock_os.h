@@ -15,9 +15,9 @@ typedef bool rts_sock_os_listen_handler(rts_eh_t* eh, rts_sock_t sock);
 // TODO: Save off address info given by accept()
 typedef bool rts_sock_os_accept_handler(rts_eh_t* eh, rts_sock_t listener, rts_sock_t* new_client);
 
-typedef bool rts_sock_os_recv_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read);
+typedef bool rts_sock_os_recv_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_read, bool* would_block);
 
-typedef bool rts_sock_os_send_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent);
+typedef bool rts_sock_os_send_handler(rts_eh_t* eh, rts_sock_t sock, char* buffer, int buffer_length, int* bytes_sent, bool* would_block);
 
 typedef bool rts_sock_os_select_handler(rts_eh_t* eh, rts_sock_set_t* recv, rts_sock_set_t* send);
 
@@ -30,6 +30,7 @@ typedef rts_sock_set_t* rts_sock_os_create_sock_set_handler();
 typedef struct {
 
 	// Open an actual socket. *Always* TCP/IP with
+	// - O_NONBLOCK / FIONBIO
 	// - TCP_NODELAY
 	// - SO_REUSEADDR
 	// - SO_DONTLINGER

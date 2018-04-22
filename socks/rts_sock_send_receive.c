@@ -6,10 +6,14 @@ rts_sock_send_receive_t* rts_sock_send_receive_create(rts_eh_t* eh, rts_sock_t s
 	s->sock = sock;
 	s->send = rts_circular_create(eh, 64);
 	s->receive = rts_circular_create(eh, 64);
+
+	s->scratch = rts_alloc(0, 64);
+	s->scratch_length = 64;
 	return s;
 }
 
 void rts_sock_send_receive_destroy(rts_sock_send_receive_t* s) {
+	rts_free(s->scratch);
 	rts_circular_destroy(NULL, s->receive);
 	rts_circular_destroy(NULL, s->send);
 	rts_free(s);
